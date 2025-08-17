@@ -633,7 +633,7 @@ func _physics_process(delta : float) -> void:
 func process_drag() -> void:
 	var drag := 0.5 * air_density * pow(speed, 2.0) * frontal_area * coefficient_of_drag
 	if drag > 0.0:
-		apply_central_force(-local_velocity.normalized() * drag)
+		apply_central_force(-linear_velocity.normalized() * drag)
 
 func process_braking(delta : float) -> void:
 	if (brake_input < brake_amount):
