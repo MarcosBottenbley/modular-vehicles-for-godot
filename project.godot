@@ -10,10 +10,17 @@ config_version=5
 
 [application]
 
-config/name="Godot Easy Vehicle Physics"
-run/main_scene="res://addons/gevp/scenes/demo_arcade.tscn"
-config/features=PackedStringArray("4.3", "Forward Plus")
+config/name="Modular Vehicles Plugin"
+config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://addons/gevp/icon.png"
+
+[dotnet]
+
+project/assembly_name="Godot Easy Vehicle Physics"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/modular_vehicles_plugin/plugin.cfg")
 
 [input]
 
