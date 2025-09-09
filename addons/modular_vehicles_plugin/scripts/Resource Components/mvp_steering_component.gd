@@ -1,4 +1,4 @@
-class_name SteeringParameters
+class_name MVPSteeringComponent
 extends Resource
 
 ## The rate that the steering input changes in order to smooth
