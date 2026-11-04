@@ -1,0 +1,8 @@
+[gd_resource type="MVSurface" format=3 uid="uid://dkb6vdbe2xr16"]
+
+[resource]
+name = &"Grass"
+tire_stiffness = 0.5
+coefficient_of_friction = 2.0
+rolling_resistance = 4.0
+lateral_grip_assist = 0.0

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MVSurfaceLibrary" inherits="Resource" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		The set of surfaces a vehicle knows about.
+	</brief_description>
+	<description>
+		Maps node group names to [MVSurface] resources. [method find_surface] searches [member surfaces] in order, then falls back to [member default_surface], and finally to a shared built-in surface with the default (road) values, so it never returns [code]null[/code].
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="find_surface" qualifiers="const">
+			<return type="MVSurface" />
+			<param index="0" name="name" type="StringName" />
+			<description>
+				Returns the first surface in [member surfaces] whose [member MVSurface.name] equals [param name], otherwise [member default_surface], otherwise a shared built-in road surface.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="default_surface" type="MVSurface" setter="set_default_surface" getter="get_default_surface">
+			Returned by [method find_surface] when no surface matches. When empty, a shared built-in [MVSurface] with default values is used instead.
+		</member>
+		<member name="surfaces" type="MVSurface[]" setter="set_surfaces" getter="get_surfaces" default="[]">
+			Surfaces searched in order by [method find_surface].
+		</member>
+	</members>
+</class>

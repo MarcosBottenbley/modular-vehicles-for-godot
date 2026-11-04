@@ -1,0 +1,8 @@
+[gd_resource type="MVSurface" format=3 uid="uid://b1q7jmlxtfwcn"]
+
+[resource]
+name = &"Dirt"
+tire_stiffness = 0.5
+coefficient_of_friction = 2.4
+rolling_resistance = 2.0
+lateral_grip_assist = 0.0
