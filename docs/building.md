@@ -101,3 +101,39 @@ terminal, and `MVVehicle` appears in the editor's Create Node dialog.
 
 Builds are not code-signed. Users who download a release may need to clear the quarantine
 attribute once: `xattr -dr com.apple.quarantine addons/modular_vehicles/bin`.
+
+## Continuous integration
+
+Every push to `main` and every pull request runs the **Build** workflow
+(`.github/workflows/build.yml`). It is a 3 x 3 matrix:
+
+| Platform | Runner | `arch` | Targets |
+|---|---|---|---|
+| `windows` | `windows-latest` (MSVC) | `x86_64` | `editor`, `template_debug`, `template_release` |
+| `linux` | `ubuntu-22.04` (older glibc for compatibility) | `x86_64` | `editor`, `template_debug`, `template_release` |
+| `macos` | `macos-latest` | `universal` | `editor`, `template_debug`, `template_release` |
+
+`fail-fast` is off, so one failing job does not cancel the others, and a new push to the same
+branch cancels the run that is still in flight.
+
+**Cache.** Each job points `SCONS_CACHE` at a `.scons-cache` folder that is saved with
+`actions/cache`. The key is platform, arch, target, the godot-cpp submodule commit and a hash of
+`SConstruct`; partial keys fall back to the latest cache for the same platform and target. The
+first run compiles godot-cpp from scratch (several minutes); later runs mostly hit the cache.
+Bump the godot-cpp submodule or edit `SConstruct` and the cache is rebuilt.
+
+**Artifacts.** Every job uploads `addons/modular_vehicles/bin/` as an artifact named
+`bin-<platform>-<target>`, for example `bin-linux-template_release` or `bin-macos-editor`
+(the macOS artifact contains the `.framework` folder). Artifacts are kept for 90 days.
+
+**Downloading a build from a PR.** Open the PR, click the **Checks** tab (or the "Details" link
+next to a Build job), then open the workflow run **Summary**; the artifacts are listed at the
+bottom. Alternatively, with the GitHub CLI:
+
+```
+gh run list --workflow Build --branch <branch>
+gh run download <run-id> --name bin-linux-template_release --dir addons/modular_vehicles/bin
+```
+
+Drop the downloaded files into `addons/modular_vehicles/bin/` of a checkout and open the
+project in Godot 4.4+ to try the build without compiling.
