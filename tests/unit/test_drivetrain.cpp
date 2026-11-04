@@ -1,27 +1,65 @@
+// Tests for src/math/mv_drivetrain.hpp against the [drivetrain] golden values in
+// tests/unit/golden/golden_values.txt.
+//
+// Terms:
+//   golden value: see test_helpers.hpp.
+//   demo gearbox: vehicle.gd defaults, ratios 3.8 / 2.3 / 1.7 / 1.3 / 1.0 / 0.8, final drive
+//     3.2, reverse 3.3, gear inertia 0.02 kg*m^2.
+//   demo motor: vehicle.gd defaults, 300 N*m peak torque, 7000 max RPM, motor moment
+//     0.5 kg*m^2, motor drag 0.005 N*m per RPM, clutch ratio 1.6.
+//   demo torque curve: the Curve sub-resource shared by the four demo scenes
+//     (arcade_car.tscn Curve_bt7kc), which the golden script sampled into kDemoTable.
+//   flat table: a torque table filled with one value, standing in for a null curve.
+//   ramp table: a torque table whose entry i holds i, so interpolation can be read off directly.
+//   gear index / overall gear ratio / torque table / torque factor / drive inertia / clutch
+//     torque / clutch capacity / drivetrain spin / wheels reaction torque: as defined in
+//     mv_drivetrain.hpp.
 #include "test_helpers.hpp"
 
 #include "math/mv_drivetrain.hpp"
 
 using namespace mv;
 
-// Golden values: tests/unit/golden/golden_values.txt, [drivetrain].
 namespace {
-// vehicle.gd Gearbox / Motor defaults.
+// Demo gearbox ratios, unitless, first gear first.
 constexpr Real kGearRatios[] = { R(3.8), R(2.3), R(1.7), R(1.3), R(1.0), R(0.8) };
 constexpr std::uint32_t kGearCount = 6;
+// Demo final drive and reverse ratio, unitless.
 constexpr Real kFinalDrive = R(3.2);
 constexpr Real kReverseRatio = R(3.3);
+// Demo motor peak torque, in N*m, and maximum speed, in RPM.
 constexpr Real kMaxTorque = 300;
 constexpr Real kMaxRpm = 7000;
+// Demo motor moment, in kg*m^2.
 constexpr Real kMotorMoment = R(0.5);
+// Physics tick at 120 Hz, in s.
 constexpr Real kDelta = R(1.0 / 120.0);
 
-// The demo torque curve (arcade_car.tscn Curve_bt7kc) sampled at 128 points by the golden script.
+// The demo torque curve sampled at 128 points by the golden script (torque_table line).
 const TorqueTable kDemoTable = { { R(0.4945050), R(0.5104434), R(0.5260566), R(0.5413478), R(0.5563202), R(0.5709769), R(0.5853211), R(0.5993556), R(0.6130840), R(0.6265092), R(0.6396344), R(0.6524625), R(0.6649972), R(0.6772411), R(0.6891975), R(0.7008696), R(0.7122604), R(0.7233732), R(0.7342111), R(0.7447772), R(0.7550746), R(0.7651064), R(0.7748758), R(0.7843860), R(0.7936401), R(0.8026415), R(0.8113928), R(0.8198974), R(0.8281584), R(0.8361790), R(0.8439622), R(0.8515114), R(0.8588296), R(0.8659198), R(0.8727854), R(0.8794293), R(0.8858548), R(0.8920649), R(0.8980628), R(0.9038516), R(0.9094346), R(0.9148147), R(0.9199953), R(0.9249793), R(0.9297699), R(0.9343702), R(0.9387835), R(0.9430128), R(0.9470613), R(0.9509321), R(0.9546283), R(0.9581532), R(0.9615097), R(0.9647012), R(0.9677305), R(0.9706011), R(0.9733158), R(0.9758781), R(0.9782908), R(0.9805573), R(0.9826804), R(0.9846636), R(0.9865099), R(0.9882225), R(0.9898043), R(0.9912587), R(0.9925886), R(0.9937975), R(0.9948882), R(0.9958640), R(0.9967278), R(0.9974831), R(0.9981328), R(0.9986801), R(0.9991282), R(0.9994800), R(0.9997389), R(0.9999080), R(0.9999903), R(0.9999596), R(0.9996533), R(0.9990482), R(0.9981469), R(0.9969519), R(0.9954658), R(0.9936911), R(0.9916304), R(0.9892861), R(0.9866608), R(0.9837573), R(0.9805779), R(0.9771252), R(0.9734018), R(0.9694101), R(0.9651527), R(0.9606323), R(0.9558513), R(0.9508123), R(0.9455180), R(0.9399705), R(0.9341727), R(0.9281272), R(0.9218364), R(0.9153030), R(0.9085293), R(0.9015179), R(0.8942715), R(0.8867927), R(0.8790837), R(0.8711474), R(0.8629862), R(0.8546026), R(0.8459994), R(0.8371788), R(0.8281435), R(0.8188961), R(0.8094392), R(0.7997752), R(0.7899067), R(0.7798362), R(0.7695662), R(0.7590995), R(0.7484385), R(0.7375857), R(0.7265437), R(0.7153150), R(0.7039023), R(0.6923080) } };
 
+// One golden sample of vehicle.gd get_torque_at_rpm() on the demo curve.
+struct TorqueSample {
+	Real rpm; // motor speed, in RPM
+	double torque; // Curve.sample_baked(clamp(rpm / 7000, 0, 1)) * 300, in N*m
+};
+
+// Builds a flat table.
+// p_value: the torque factor every entry holds, unitless.
+// Returns: the table; tests use it to check that a null curve gives a constant factor.
 TorqueTable flat_table(Real p_value) {
 	TorqueTable table;
 	table.fill(p_value);
+	return table;
+}
+
+// Builds the ramp table (entry i holds i).
+// Returns: the table; tests read interpolated values off it directly.
+TorqueTable ramp_table() {
+	TorqueTable table;
+	for (std::uint32_t entry_index = 0; entry_index < kTorqueTableSize; ++entry_index) {
+		table[entry_index] = static_cast<Real>(entry_index);
+	}
 	return table;
 }
 } // namespace
@@ -49,26 +87,23 @@ TEST_CASE("mv_drivetrain: gear_ratio matches vehicle.gd get_gear_ratio()") {
 		CHECK(gear_ratio(1, nullptr, kGearCount, kFinalDrive, kReverseRatio) == 0);
 	}
 	SUBCASE("a single-speed gearbox (N = 1)") {
-		const Real single[] = { 4 };
-		CHECK(gear_ratio(1, single, 1, 2, 3) == approx(8.0));
-		CHECK(gear_ratio(2, single, 1, 2, 3) == 0);
-		CHECK(gear_ratio(-1, single, 1, 2, 3) == approx(-6.0));
+		const Real single_ratio[] = { 4 };
+		CHECK(gear_ratio(1, single_ratio, 1, 2, 3) == approx(8.0));
+		CHECK(gear_ratio(2, single_ratio, 1, 2, 3) == 0);
+		CHECK(gear_ratio(-1, single_ratio, 1, 2, 3) == approx(-6.0));
 	}
 }
 
 TEST_CASE("mv_drivetrain: sample_torque_table interpolates a baked table") {
 	SUBCASE("a flat table reproduces a null curve") {
 		const TorqueTable ones = flat_table(1);
-		for (Real x : { R(0.0), R(0.001), R(0.37), R(0.5), R(0.999), R(1.0), R(1.5), R(-1.0) }) {
-			CHECK(sample_torque_table(ones, x) == approx(1.0));
+		for (Real position : { R(0.0), R(0.001), R(0.37), R(0.5), R(0.999), R(1.0), R(1.5), R(-1.0) }) {
+			CHECK(sample_torque_table(ones, position) == approx(1.0));
 		}
 		CHECK(torque_at_rpm(3500, kMaxRpm, kMaxTorque, ones) == approx(300.0));
 	}
 	SUBCASE("knots are returned exactly and midpoints are linear") {
-		TorqueTable ramp;
-		for (std::uint32_t i = 0; i < kTorqueTableSize; ++i) {
-			ramp[i] = static_cast<Real>(i);
-		}
+		const TorqueTable ramp = ramp_table();
 		CHECK(sample_torque_table(ramp, 0) == approx(0.0));
 		CHECK(sample_torque_table(ramp, 1) == approx(127.0));
 		CHECK(sample_torque_table(ramp, R(1.0 / 127.0)) == approx(1.0));
@@ -82,11 +117,7 @@ TEST_CASE("mv_drivetrain: sample_torque_table interpolates a baked table") {
 }
 
 TEST_CASE("mv_drivetrain: torque_at_rpm stays within 1% of vehicle.gd get_torque_at_rpm() on the demo curve") {
-	// Right-hand side: Curve.sample_baked(clamp(rpm / 7000, 0, 1)) * 300 from the golden script.
-	const struct {
-		Real rpm;
-		double torque;
-	} cases[] = {
+	const TorqueSample samples[] = {
 		{ 0, 148.3514964581 },
 		{ 500, 188.2321000099 },
 		{ 1000, 220.7129359245 },
@@ -101,10 +132,12 @@ TEST_CASE("mv_drivetrain: torque_at_rpm stays within 1% of vehicle.gd get_torque
 		{ 7000, 207.6924026012 },
 		{ 7700, 207.6924026012 }, // beyond max_rpm: clamped like the GDScript
 	};
-	for (const auto &c : cases) {
-		CAPTURE(c.rpm);
-		CHECK(torque_at_rpm(c.rpm, kMaxRpm, kMaxTorque, kDemoTable) == approx(c.torque, 0.01));
-		CHECK(torque_factor_at_rpm(c.rpm, kMaxRpm, kDemoTable) == approx(c.torque / 300.0, 0.01));
+	// 1 % is the acceptance criterion of card B03 for the table against Curve.sample_baked.
+	const double table_tolerance = 0.01;
+	for (const TorqueSample &sample : samples) {
+		CAPTURE(sample.rpm);
+		CHECK(torque_at_rpm(sample.rpm, kMaxRpm, kMaxTorque, kDemoTable) == approx(sample.torque, table_tolerance));
+		CHECK(torque_factor_at_rpm(sample.rpm, kMaxRpm, kDemoTable) == approx(sample.torque / 300.0, table_tolerance));
 	}
 	SUBCASE("non-positive max_rpm falls back to the first table entry") {
 		CHECK(torque_at_rpm(3000, 0, kMaxTorque, kDemoTable) == approx(kDemoTable[0] * 300.0));
@@ -126,37 +159,39 @@ TEST_CASE("mv_drivetrain: motor helpers match vehicle.gd process_motor()") {
 }
 
 TEST_CASE("mv_drivetrain: drive_inertia and clutch_torque match vehicle.gd process_clutch()") {
+	// Demo gear inertia, in kg*m^2.
 	const Real gear_inertia = R(0.02);
+	// Two driven demo wheels (15 kg, 0.3 m), in kg*m^2.
 	const Real drive_axles_inertia = 2 * (R(0.5) * 15 * R(0.3) * R(0.3));
 	const Real max_clutch = max_clutch_torque(kMaxTorque, R(1.6));
 	CHECK(max_clutch == approx(480.0));
 
-	const Real ratio_2 = gear_ratio(2, kGearRatios, kGearCount, kFinalDrive, kReverseRatio);
-	const Real inertia_2 = drive_inertia(kMotorMoment, ratio_2, gear_inertia, drive_axles_inertia);
-	CHECK(inertia_2 == approx(2.933392));
-	CHECK(drive_inertia(kMotorMoment, ratio_2, gear_inertia, 0) == approx(1.583392));
+	const Real second_gear_ratio = gear_ratio(2, kGearRatios, kGearCount, kFinalDrive, kReverseRatio);
+	const Real second_gear_inertia = drive_inertia(kMotorMoment, second_gear_ratio, gear_inertia, drive_axles_inertia);
+	CHECK(second_gear_inertia == approx(2.933392));
+	CHECK(drive_inertia(kMotorMoment, second_gear_ratio, gear_inertia, 0) == approx(1.583392));
 
 	SUBCASE("motor spinning faster than the wheels: clamped to the clutch capacity") {
-		CHECK(clutch_torque(kMotorMoment, inertia_2, ratio_2, rpm_to_angular_velocity(4325), 40, 120, 180, 0, max_clutch, kDelta) == approx(480.0));
+		CHECK(clutch_torque(kMotorMoment, second_gear_inertia, second_gear_ratio, rpm_to_angular_velocity(4325), 40, 120, 180, 0, max_clutch, kDelta) == approx(480.0));
 	}
 	SUBCASE("overrun: negative speed difference takes the -sqrt branch") {
-		CHECK(clutch_torque(kMotorMoment, inertia_2, ratio_2, rpm_to_angular_velocity(2000), 60, -30, -8, 0, max_clutch, kDelta) == approx(-86.4409145434));
+		CHECK(clutch_torque(kMotorMoment, second_gear_inertia, second_gear_ratio, rpm_to_angular_velocity(2000), 60, -30, -8, 0, max_clutch, kDelta) == approx(-86.4409145434));
 	}
 	SUBCASE("half-pressed pedal halves the clamp") {
-		CHECK(clutch_torque(kMotorMoment, inertia_2, ratio_2, rpm_to_angular_velocity(4325), 40, 120, 180, R(0.5), max_clutch, kDelta) == approx(240.0));
+		CHECK(clutch_torque(kMotorMoment, second_gear_inertia, second_gear_ratio, rpm_to_angular_velocity(4325), 40, 120, 180, R(0.5), max_clutch, kDelta) == approx(240.0));
 	}
 	SUBCASE("nearly locked drivetrain") {
-		const Real spin = rpm_to_angular_velocity(3000) / ratio_2 + R(0.5);
-		CHECK(clutch_torque(kMotorMoment, inertia_2, ratio_2, rpm_to_angular_velocity(3000), spin, 90, 150, 0, max_clutch, kDelta) == approx(-7.6228605564, 1e-3));
+		const Real drivetrain_spin = rpm_to_angular_velocity(3000) / second_gear_ratio + R(0.5);
+		CHECK(clutch_torque(kMotorMoment, second_gear_inertia, second_gear_ratio, rpm_to_angular_velocity(3000), drivetrain_spin, 90, 150, 0, max_clutch, kDelta) == approx(-7.6228605564, 1e-3));
 	}
 	SUBCASE("reverse gear") {
-		const Real ratio_r = gear_ratio(-1, kGearRatios, kGearCount, kFinalDrive, kReverseRatio);
-		const Real inertia_r = drive_inertia(kMotorMoment, ratio_r, gear_inertia, drive_axles_inertia);
-		CHECK(clutch_torque(kMotorMoment, inertia_r, ratio_r, rpm_to_angular_velocity(1500), -5, -40, 60, 0, max_clutch, kDelta) == approx(427.2096108504));
+		const Real reverse_gear_ratio = gear_ratio(-1, kGearRatios, kGearCount, kFinalDrive, kReverseRatio);
+		const Real reverse_gear_inertia = drive_inertia(kMotorMoment, reverse_gear_ratio, gear_inertia, drive_axles_inertia);
+		CHECK(clutch_torque(kMotorMoment, reverse_gear_inertia, reverse_gear_ratio, rpm_to_angular_velocity(1500), -5, -40, 60, 0, max_clutch, kDelta) == approx(427.2096108504));
 	}
 	SUBCASE("neutral, fully pressed pedal or zero delta give no clutch torque") {
-		CHECK(clutch_torque(kMotorMoment, inertia_2, 0, rpm_to_angular_velocity(4325), 40, 120, 180, 0, max_clutch, kDelta) == 0);
-		CHECK(clutch_torque(kMotorMoment, inertia_2, ratio_2, rpm_to_angular_velocity(4325), 40, 120, 180, 1, max_clutch, kDelta) == approx(0.0));
-		CHECK(clutch_torque(kMotorMoment, inertia_2, ratio_2, rpm_to_angular_velocity(4325), 40, 120, 180, 0, max_clutch, 0) == 0);
+		CHECK(clutch_torque(kMotorMoment, second_gear_inertia, 0, rpm_to_angular_velocity(4325), 40, 120, 180, 0, max_clutch, kDelta) == 0);
+		CHECK(clutch_torque(kMotorMoment, second_gear_inertia, second_gear_ratio, rpm_to_angular_velocity(4325), 40, 120, 180, 1, max_clutch, kDelta) == approx(0.0));
+		CHECK(clutch_torque(kMotorMoment, second_gear_inertia, second_gear_ratio, rpm_to_angular_velocity(4325), 40, 120, 180, 0, max_clutch, 0) == 0);
 	}
 }

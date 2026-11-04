@@ -1,10 +1,17 @@
+// Tests for src/math/mv_aero.hpp against the [aero] golden values in
+// tests/unit/golden/golden_values.txt.
+//
+// Terms:
+//   golden value: see test_helpers.hpp.
+//   drag: the air resistance magnitude in N; the vehicle applies it against its velocity.
+//   demo car: vehicle.gd defaults, coefficient of drag 0.3, air density 1.225 kg/m^3, frontal
+//     area 2 m^2.
 #include "test_helpers.hpp"
 
 #include "math/mv_aero.hpp"
 
 using namespace mv;
 
-// Golden values: tests/unit/golden/golden_values.txt, [aero].
 TEST_CASE("mv_aero: drag_force matches vehicle.gd process_drag()") {
 	CHECK(drag_force(20, R(0.3), R(1.225), 2) == approx(147.0));
 	CHECK(drag_force(R(55.5), R(0.28), R(1.225), R(2.2)) == approx(1162.178325));

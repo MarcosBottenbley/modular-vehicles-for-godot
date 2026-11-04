@@ -16,28 +16,41 @@ import os
 MV_VERSION = "0.1.0"
 
 # ---------------------------------------------------------------------------------------------
-# Unit tests (doctest). `scons tests` compiles tests/unit/*.cpp with a plain SCons environment:
-# only src/ (the std-only math headers) and thirdparty/doctest are on the include path and
-# godot-cpp is never configured, compiled or linked. `precision=double` defines
-# MV_DOUBLE_PRECISION exactly like the library build does. See docs/testing.md.
+# Unit tests (doctest).
+#
+# Terms:
+#   test binary: bin/tests/mv_tests (.exe on Windows), tests/unit/*.cpp linked with doctest.
+#   test environment: a plain SCons Environment() with only src/ and thirdparty/doctest/ on the
+#     include path; godot-cpp is never configured, compiled or linked into it.
+#   precision: the `precision=single|double` command-line option shared with the library build;
+#     double defines MV_DOUBLE_PRECISION so mv::Real becomes double in the tests too.
+#   tests-only run: `scons tests` with no other target, which skips the godot-cpp SConscript
+#     entirely so the tests build in seconds without the submodule.
+# See docs/testing.md.
 # ---------------------------------------------------------------------------------------------
 test_env = Environment()
 test_env.Append(CPPPATH=["src/", "thirdparty/doctest/"])
-if ARGUMENTS.get("precision", "single") == "double":
+
+test_precision = ARGUMENTS.get("precision", "single")
+if test_precision == "double":
     test_env.Append(CPPDEFINES=["MV_DOUBLE_PRECISION"])
+
+# C++17 with warnings on, for whichever compiler the default toolchain picked.
 if "msvc" in test_env["TOOLS"]:
     test_env.Append(CXXFLAGS=["/std:c++17", "/EHsc", "/W4", "/permissive-", "/utf-8"])
 else:
     test_env.Append(CXXFLAGS=["-std=c++17", "-Wall", "-Wextra", "-Wpedantic"])
 
-test_objects = [
-    test_env.Object(target="bin/tests/obj/" + os.path.splitext(os.path.basename(str(src)))[0], source=src)
-    for src in Glob("tests/unit/*.cpp")
-]
+# Objects go to bin/tests/obj/ (gitignored) instead of next to the sources.
+test_sources = Glob("tests/unit/*.cpp")
+test_objects = []
+for test_source in test_sources:
+    object_name = os.path.splitext(os.path.basename(str(test_source)))[0]
+    test_objects.append(test_env.Object(target="bin/tests/obj/" + object_name, source=test_source))
+
 test_program = test_env.Program(target="bin/tests/mv_tests", source=test_objects)
 test_env.Alias("tests", test_program)
 
-# When only the tests are requested, skip godot-cpp entirely (no submodule or platform needed).
 if COMMAND_LINE_TARGETS == ["tests"]:
     Return()
 

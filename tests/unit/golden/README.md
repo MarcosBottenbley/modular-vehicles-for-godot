@@ -40,7 +40,10 @@ distribution, 0.15 m spring length, 0.5 resting ratio. `vehicle.gd` passes
 ## Rules
 
 - Copy formulas verbatim from the GDScript; turn node state into parameters, change nothing
-  else. If a formula in the reference changes, update the copy and regenerate.
+  else. Lines may be wrapped inside parentheses and factors may be given names to satisfy the
+  Coding style rules in CLAUDE.md, but no product or sum is reordered: the C++ port must match
+  this evaluation order to the last rounding. If a formula in the reference changes, update
+  the copy and regenerate.
 - Scalars are doubles in GDScript but `Vector2` / `Vector3` components are 32-bit floats, which
   is why some printed values carry float rounding (for example `-1416.5465087891`). The C++
   tests compare with a relative tolerance of 1e-4 (1 % for the torque-table interpolation).
