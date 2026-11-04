@@ -1,0 +1,18 @@
+[configuration]
+
+entry_symbol = "modular_vehicles_library_init"
+compatibility_minimum = "4.4"
+reloadable = true
+
+[libraries]
+
+; Godot picks the first entry whose feature tags all match, so editor entries come first.
+windows.editor.x86_64 = "res://addons/modular_vehicles/bin/libmodular_vehicles.windows.editor.x86_64.dll"
+windows.debug.x86_64 = "res://addons/modular_vehicles/bin/libmodular_vehicles.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "res://addons/modular_vehicles/bin/libmodular_vehicles.windows.template_release.x86_64.dll"
+linux.editor.x86_64 = "res://addons/modular_vehicles/bin/libmodular_vehicles.linux.editor.x86_64.so"
+linux.debug.x86_64 = "res://addons/modular_vehicles/bin/libmodular_vehicles.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "res://addons/modular_vehicles/bin/libmodular_vehicles.linux.template_release.x86_64.so"
+macos.editor = "res://addons/modular_vehicles/bin/libmodular_vehicles.macos.editor.framework"
+macos.debug = "res://addons/modular_vehicles/bin/libmodular_vehicles.macos.template_debug.framework"
+macos.release = "res://addons/modular_vehicles/bin/libmodular_vehicles.macos.template_release.framework"

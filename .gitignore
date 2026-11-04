@@ -1,3 +1,23 @@
 # Godot 4+ specific ignores
 .godot/
 .vscode/
+
+# Build output
+addons/modular_vehicles/bin/*
+!addons/modular_vehicles/bin/.gitkeep
+bin/
+src/gen/
+.sconsign.dblite
+.scons-cache/
+*.os
+*.obj
+*.o
+*.pdb
+*.exp
+*.lib
+*.ilk
+compile_commands.json
+
+# Dev-only dependencies
+addons/gut/
+gut_results.xml
