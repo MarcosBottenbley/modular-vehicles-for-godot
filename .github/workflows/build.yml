@@ -92,3 +92,5 @@ jobs:
           name: bin-${{ matrix.platform }}-${{ matrix.target }}
           path: addons/modular_vehicles/bin/
           if-no-files-found: error
+          # Re-running a job must be able to replace the artifact it uploaded before.
+          overwrite: true
