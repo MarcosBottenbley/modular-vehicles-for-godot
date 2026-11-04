@@ -21,3 +21,6 @@ compile_commands.json
 # Dev-only dependencies
 addons/gut/
 gut_results.xml
+
+# Unit-test output
+unit_results.xml
