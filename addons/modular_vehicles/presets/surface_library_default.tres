@@ -1,0 +1,9 @@
+[gd_resource type="MVSurfaceLibrary" format=3 uid="uid://cynssofgcq1ay"]
+
+[ext_resource type="MVSurface" uid="uid://lntrhahxx3fx" path="res://addons/modular_vehicles/presets/surface_road.tres" id="1_3em5i"]
+[ext_resource type="MVSurface" uid="uid://b1q7jmlxtfwcn" path="res://addons/modular_vehicles/presets/surface_dirt.tres" id="2_qw2g7"]
+[ext_resource type="MVSurface" uid="uid://dkb6vdbe2xr16" path="res://addons/modular_vehicles/presets/surface_grass.tres" id="3_5mrjr"]
+
+[resource]
+surfaces = Array[MVSurface]([ExtResource("1_3em5i"), ExtResource("2_qw2g7"), ExtResource("3_5mrjr")])
+default_surface = ExtResource("1_3em5i")

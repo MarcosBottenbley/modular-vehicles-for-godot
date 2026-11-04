@@ -16,3 +16,11 @@ linux.release.x86_64 = "res://addons/modular_vehicles/bin/libmodular_vehicles.li
 macos.editor = "res://addons/modular_vehicles/bin/libmodular_vehicles.macos.editor.framework"
 macos.debug = "res://addons/modular_vehicles/bin/libmodular_vehicles.macos.template_debug.framework"
 macos.release = "res://addons/modular_vehicles/bin/libmodular_vehicles.macos.template_release.framework"
+
+[icons]
+
+MVSurface = "res://addons/modular_vehicles/icons/MVSurface.svg"
+MVSurfaceLibrary = "res://addons/modular_vehicles/icons/MVSurfaceLibrary.svg"
+MVTireSettings = "res://addons/modular_vehicles/icons/MVTireSettings.svg"
+MVSuspensionSettings = "res://addons/modular_vehicles/icons/MVSuspensionSettings.svg"
+MVBrakeSettings = "res://addons/modular_vehicles/icons/MVBrakeSettings.svg"

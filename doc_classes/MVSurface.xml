@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MVSurface" inherits="Resource" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Grip and rolling resistance of one driving surface.
+	</brief_description>
+	<description>
+		Describes how tires behave on one kind of ground. A wheel resolves the surface it is touching from the node groups of the collider: the first group whose name equals [member name] selects this surface. Surfaces are collected in an [MVSurfaceLibrary].
+		Every setter clamps the value to its valid range and emits [signal Resource.changed] only when the value actually changed; wheels pick the change up on their next physics tick.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="coefficient_of_friction" type="float" setter="set_coefficient_of_friction" getter="get_coefficient_of_friction" default="3.0">
+			Multiplier for the amount of force a tire can apply on this surface.
+		</member>
+		<member name="lateral_grip_assist" type="float" setter="set_lateral_grip_assist" getter="get_lateral_grip_assist" default="0.05">
+			Extra lateral grip proportional to the lateral slip. Keeps vehicles from sliding long distances, at the cost of unrealistically high grip.
+		</member>
+		<member name="longitudinal_grip_ratio" type="float" setter="set_longitudinal_grip_ratio" getter="get_longitudinal_grip_ratio" default="0.5">
+			Scales longitudinal grip relative to lateral grip. Lower values let the wheels spin while the vehicle keeps its lateral grip.
+		</member>
+		<member name="name" type="StringName" setter="set_name" getter="get_name" default="&amp;&quot;Road&quot;">
+			Node group name that selects this surface. Add your static and rigid bodies to a group with this name.
+		</member>
+		<member name="rolling_resistance" type="float" setter="set_rolling_resistance" getter="get_rolling_resistance" default="1.0">
+			Multiplier for the rolling resistance force on this surface.
+		</member>
+		<member name="tire_stiffness" type="float" setter="set_tire_stiffness" getter="get_tire_stiffness" default="10.0">
+			Tire stiffness in the brush tire model. Higher values make the tire respond faster to slip. Internally scaled to [code]1e6 + 8e6 * tire_stiffness[/code] N/m.
+		</member>
+	</members>
+</class>

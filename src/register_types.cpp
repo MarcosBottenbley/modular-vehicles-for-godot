@@ -7,6 +7,11 @@
 
 #include "mv_version.h"
 #include "nodes/mv_vehicle.h"
+#include "resources/mv_brake_settings.h"
+#include "resources/mv_surface.h"
+#include "resources/mv_surface_library.h"
+#include "resources/mv_suspension_settings.h"
+#include "resources/mv_tire_settings.h"
 
 using namespace godot;
 
@@ -16,6 +21,11 @@ void initialize_modular_vehicles_module(ModuleInitializationLevel p_level) {
 	}
 
 	// Resources are registered before the nodes that reference them.
+	GDREGISTER_CLASS(MVSurface);
+	GDREGISTER_CLASS(MVSurfaceLibrary);
+	GDREGISTER_CLASS(MVTireSettings);
+	GDREGISTER_CLASS(MVSuspensionSettings);
+	GDREGISTER_CLASS(MVBrakeSettings);
 	GDREGISTER_CLASS(MVVehicle);
 
 	UtilityFunctions::print("Modular Vehicles ", MV_VERSION, " (", MV_BUILD_TARGET, ") loaded");
@@ -25,6 +35,9 @@ void uninitialize_modular_vehicles_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+
+	// The library is reloadable: static resources must die before Godot unloads it.
+	MVSurfaceLibrary::release_builtin_surfaces();
 }
 
 extern "C" {

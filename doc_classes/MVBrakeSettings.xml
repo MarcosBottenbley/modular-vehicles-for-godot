@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MVBrakeSettings" inherits="Resource" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Anti-lock braking and brake force share of a wheel.
+	</brief_description>
+	<description>
+		Shared brake data referenced by any number of wheels.
+		Every setter clamps the value to its valid range and emits [signal Resource.changed] only when the value actually changed.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="abs_enabled" type="bool" setter="set_abs_enabled" getter="is_abs_enabled" default="true">
+			If [code]true[/code], anti-lock braking can release the brake on this wheel. The handbrake always bypasses ABS.
+		</member>
+		<member name="abs_pulse_time" type="float" setter="set_abs_pulse_time" getter="get_abs_pulse_time" default="0.03">
+			How long the ABS releases the brake, in seconds, when the spin threshold is crossed.
+		</member>
+		<member name="abs_spin_difference_threshold" type="float" setter="set_abs_spin_difference_threshold" getter="get_abs_spin_difference_threshold" default="12.0">
+			The difference in speed, in m/s, required between the wheel and the driving surface for ABS to engage.
+		</member>
+		<member name="bias_weight" type="float" setter="set_bias_weight" getter="get_bias_weight" default="-1.0">
+			Share of the total brake force of the vehicle this wheel receives. [code]-1[/code] computes it automatically from the static load on the wheel; values of [code]0[/code] or more are relative weights that are normalised over all wheels of the vehicle.
+		</member>
+	</members>
+</class>

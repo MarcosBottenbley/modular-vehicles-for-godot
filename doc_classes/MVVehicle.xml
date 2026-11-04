@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MVVehicle" inherits="RigidBody3D" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Root node of a modular vehicle.
+	</brief_description>
+	<description>
+		A [RigidBody3D] that will discover its [code]MVWheel[/code] descendants and run the vehicle simulation. This scaffold version only exposes the centre of gravity; the physics arrives in later branches.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="center_of_gravity" type="Vector3" setter="set_center_of_gravity" getter="get_center_of_gravity" default="Vector3(0, 0, 0)">
+			Centre of mass of the body in local space, in metres. Setting it switches the body to [constant RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM].
+		</member>
+	</members>
+</class>

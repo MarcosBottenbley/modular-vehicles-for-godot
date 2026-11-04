@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MVTireSettings" inherits="Resource" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Tire geometry and brush-model parameters for a wheel.
+	</brief_description>
+	<description>
+		Shared tire data referenced by any number of wheels. Units are SI except [member tire_width], which is in millimetres like the original GDScript. The surface multipliers scale the values of the [MVSurface] the wheel is on, so one surface library can serve tires with different compounds.
+		Every setter clamps the value to its valid range and emits [signal Resource.changed] only when the value actually changed.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="braking_grip_multiplier" type="float" setter="set_braking_grip_multiplier" getter="get_braking_grip_multiplier" default="1.5">
+			Provides additional longitudinal grip when braking.
+		</member>
+		<member name="contact_patch" type="float" setter="set_contact_patch" getter="get_contact_patch" default="0.2">
+			Length of the tire contact patch in the brush tire model, in metres.
+		</member>
+		<member name="grip_multiplier" type="float" setter="set_grip_multiplier" getter="get_grip_multiplier" default="1.0">
+			Scales [member MVSurface.coefficient_of_friction] for this tire.
+		</member>
+		<member name="rolling_resistance_multiplier" type="float" setter="set_rolling_resistance_multiplier" getter="get_rolling_resistance_multiplier" default="1.0">
+			Scales [member MVSurface.rolling_resistance] for this tire.
+		</member>
+		<member name="stiffness_multiplier" type="float" setter="set_stiffness_multiplier" getter="get_stiffness_multiplier" default="1.0">
+			Scales [member MVSurface.tire_stiffness] for this tire.
+		</member>
+		<member name="tire_radius" type="float" setter="set_tire_radius" getter="get_tire_radius" default="0.3">
+			Tire radius in metres.
+		</member>
+		<member name="tire_width" type="float" setter="set_tire_width" getter="get_tire_width" default="245.0">
+			Tire width in millimetres. The width does not directly affect tire friction, but reduces the effects of tire load sensitivity.
+		</member>
+		<member name="wheel_mass" type="float" setter="set_wheel_mass" getter="get_wheel_mass" default="15.0">
+			Wheel mass in kilograms, used for the moment of inertia of the wheel.
+		</member>
+		<member name="wheel_to_body_torque_multiplier" type="float" setter="set_wheel_to_body_torque_multiplier" getter="get_wheel_to_body_torque_multiplier" default="1.0">
+			Tire force applied to the ground is also applied to the vehicle body as a torque centred on the wheel. Gives more weight transfer when the centre of gravity is very low.
+		</member>
+	</members>
+</class>

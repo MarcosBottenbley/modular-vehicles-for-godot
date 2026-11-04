@@ -8,3 +8,10 @@ in `bin/` and come from GitHub Releases, or build them from source (see `docs/bu
 the repository).
 
 Repository and documentation: https://github.com/MarcosBottenbley/modular-vehicles-for-godot
+
+## Settings resources
+
+Wheel tuning is split into shared `Resource` classes: `MVSurface` and `MVSurfaceLibrary` (grip per
+node group), `MVTireSettings`, `MVSuspensionSettings` and `MVBrakeSettings`. Ready-made presets are
+in `presets/`; every property, its default and unit is documented in `docs/settings.md` in the
+repository.

@@ -1,0 +1,9 @@
+[gd_resource type="MVSuspensionSettings" format=3 uid="uid://b1rryilve0w8n"]
+
+[resource]
+spring_length = 0.711
+resting_ratio = 0.3
+damping_ratio = 0.2
+bump_damp_multiplier = 1.0
+rebound_damp_multiplier = 1.0
+anti_roll_ratio = 0.0

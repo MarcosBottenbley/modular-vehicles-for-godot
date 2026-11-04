@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MVSuspensionSettings" inherits="Resource" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Spring, damper, anti-roll bar and alignment of a wheel.
+	</brief_description>
+	<description>
+		Shared suspension data referenced by any number of wheels. Angles are stored in radians and edited in degrees; [member camber] and [member toe] are magnitudes, the wheel applies the sign for its side of the vehicle.
+		With [constant SPRING_RATE_AUTO_FROM_LOAD] the spring rate and damping are derived from the static load over the wheel, [member resting_ratio] and [member damping_ratio]. With [constant SPRING_RATE_MANUAL] the values of [member manual_spring_rate] and [member manual_damping] are used directly. The inspector only shows the inputs of the active mode.
+		Every setter clamps the value to its valid range and emits [signal Resource.changed] only when the value actually changed.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="anti_roll_ratio" type="float" setter="set_anti_roll_ratio" getter="get_anti_roll_ratio" default="0.25">
+			Anti-roll bar stiffness as a ratio of the spring rate.
+		</member>
+		<member name="bump_damp_multiplier" type="float" setter="set_bump_damp_multiplier" getter="get_bump_damp_multiplier" default="0.6667">
+			Multiplier applied to the base damping while the spring compresses. A typical passenger car runs 2/3 bump to 3/2 rebound; race cars typically run 3/2 bump to 2/3 rebound.
+		</member>
+		<member name="bump_stop_multiplier" type="float" setter="set_bump_stop_multiplier" getter="get_bump_stop_multiplier" default="1.0">
+			Multiplier for the force applied when the suspension is fully compressed. If the vehicle bounces off large bumps, reducing this will help.
+		</member>
+		<member name="camber" type="float" setter="set_camber" getter="get_camber" default="0.01745329">
+			Camber angle magnitude in radians. Camber is not simulated, but giving the raycast a slight angle helps simulation stability.
+		</member>
+		<member name="damping_ratio" type="float" setter="set_damping_ratio" getter="get_damping_ratio" default="0.4">
+			Damping ratio used to calculate the damping forces on the spring. [code]1.0[/code] is critically damped. Passenger cars typically use around [code]0.3[/code], a race car up to [code]0.9[/code].
+		</member>
+		<member name="fast_damp_threshold" type="float" setter="set_fast_damp_threshold" getter="get_fast_damp_threshold" default="0.127">
+			Damper speed in m/s above which the fast damping rate (half the slow rate) is used. The original script used a constant of 127 mm/s.
+		</member>
+		<member name="manual_damping" type="float" setter="set_manual_damping" getter="get_manual_damping" default="3400.0">
+			Base damper rate in N⋅s/m, used in [constant SPRING_RATE_MANUAL] mode. [member bump_damp_multiplier] and [member rebound_damp_multiplier] still apply.
+		</member>
+		<member name="manual_spring_rate" type="float" setter="set_manual_spring_rate" getter="get_manual_spring_rate" default="49000.0">
+			Spring rate in N/m, used in [constant SPRING_RATE_MANUAL] mode. The default matches what the automatic mode computes for a 1500 kg car with an even weight split.
+		</member>
+		<member name="rebound_damp_multiplier" type="float" setter="set_rebound_damp_multiplier" getter="get_rebound_damp_multiplier" default="1.5">
+			Multiplier applied to the base damping while the spring extends. See [member bump_damp_multiplier].
+		</member>
+		<member name="resting_ratio" type="float" setter="set_resting_ratio" getter="get_resting_ratio" default="0.5">
+			How much the spring is compressed when the vehicle is at rest, as a fraction of [member spring_length]. [code]1.0[/code] is fully compressed; with [code]0.5[/code] the suspension rests at the centre of its travel. Used to calculate the spring rate in [constant SPRING_RATE_AUTO_FROM_LOAD] mode.
+		</member>
+		<member name="spring_length" type="float" setter="set_spring_length" getter="get_spring_length" default="0.15">
+			Suspension travel in metres.
+		</member>
+		<member name="spring_rate_mode" type="int" setter="set_spring_rate_mode" getter="get_spring_rate_mode" enum="MVSuspensionSettings.SpringRateMode" default="0">
+			Whether the spring rate is derived from the load or set manually. See [enum SpringRateMode].
+		</member>
+		<member name="toe" type="float" setter="set_toe" getter="get_toe" default="0.01">
+			Toe angle magnitude in radians.
+		</member>
+	</members>
+	<constants>
+		<constant name="SPRING_RATE_AUTO_FROM_LOAD" value="0" enum="SpringRateMode">
+			Derive the spring rate and damping from the static load over the wheel, [member resting_ratio] and [member damping_ratio].
+		</constant>
+		<constant name="SPRING_RATE_MANUAL" value="1" enum="SpringRateMode">
+			Use [member manual_spring_rate] and [member manual_damping] as given.
+		</constant>
+	</constants>
+</class>

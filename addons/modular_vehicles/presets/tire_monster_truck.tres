@@ -1,0 +1,6 @@
+[gd_resource type="MVTireSettings" format=3 uid="uid://cf3fadmnqbcet"]
+
+[resource]
+tire_radius = 0.85
+tire_width = 1000.0
+wheel_mass = 363.0
