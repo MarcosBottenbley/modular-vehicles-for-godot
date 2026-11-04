@@ -20,7 +20,8 @@ void initialize_modular_vehicles_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 
-	// Resources are registered before the nodes that reference them.
+	// Resources are registered before the nodes that reference them, and MVSurface before
+	// MVSurfaceLibrary because the library's array property hint names it.
 	GDREGISTER_CLASS(MVSurface);
 	GDREGISTER_CLASS(MVSurfaceLibrary);
 	GDREGISTER_CLASS(MVTireSettings);

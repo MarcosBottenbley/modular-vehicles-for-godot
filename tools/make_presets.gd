@@ -1,103 +1,162 @@
-# Regenerates the preset resources in addons/modular_vehicles/presets/.
-#
-# Run from the repository root after building the extension:
-#   godot --headless --path . --import
-#   godot --headless --editor --path . -s tools/make_presets.gd
-#
-# The presets are written by ResourceSaver so their format and UIDs are Godot's own. UIDs are
-# only assigned while the editor is running, hence --editor; without it the files are still
-# valid but carry no uid. Defaults come from the C++ classes; only values that differ from the
-# defaults are set here, so regenerating after a default changes keeps the presets in sync.
 extends SceneTree
+## Regenerates the preset resources in addons/modular_vehicles/presets/.
+##
+## Run from the repository root after building the extension:
+##   godot --headless --path . --import
+##   godot --headless --editor --path . -s tools/make_presets.gd
+##
+## The presets are written by ResourceSaver so their format and UIDs are Godot's own. UIDs are
+## only assigned while the editor is running, hence --editor; without it the files are still
+## valid but carry no uid. Only values that differ from the C++ defaults are set here, so
+## regenerating after a default changes keeps the presets in sync.
+##
+## Terms:
+##   preset: a .tres file holding one settings resource with ready-made values.
+##   settings resource: an MVSurface, MVSurfaceLibrary, MVTireSettings, MVSuspensionSettings
+##     or MVBrakeSettings instance.
+##   surface: an MVSurface, the grip numbers for one node group (road, dirt, grass).
+##   surface library: the MVSurfaceLibrary listing the surfaces a vehicle knows about.
+##   default surface: the library's fallback for unknown node group names.
+##   monster truck values: the per-axle overrides of addons/gevp/scenes/monster_truck.tscn,
+##     identical for both axles there.
 
 const PRESET_DIR := "res://addons/modular_vehicles/presets/"
+## Frames to wait after _init so the editor and its UID registry exist before saving.
+const EDITOR_SETTLE_FRAMES := 3
 
 
+## Entry point: generates every preset and quits with 1 if any save failed.
+## Returns: nothing. Calls quit() with the exit code the shell sees.
 func _init() -> void:
-	_generate()
+	_generate_all()
 
 
-func _generate() -> void:
+## Generates every preset in dependency order (surfaces before the library that references
+## them) and quits with the number of failures as the exit code.
+## Returns: nothing. Writes the preset files and ends the process.
+func _generate_all() -> void:
 	if Engine.is_editor_hint():
-		# The editor (and its UID registry) is created after this script; let it settle first.
-		for i in 3:
+		for frame in EDITOR_SETTLE_FRAMES:
 			await process_frame
-	var errors := 0
 	DirAccess.make_dir_recursive_absolute(PRESET_DIR)
 
-	# Surfaces mirror the "Road", "Dirt" and "Grass" dictionaries of vehicle.gd.
-	var road: MVSurface = _load_or_new(PRESET_DIR + "surface_road.tres", "MVSurface")
-	road.name = &"Road"
-	road.tire_stiffness = 10.0
-	road.coefficient_of_friction = 3.0
-	road.rolling_resistance = 1.0
-	road.lateral_grip_assist = 0.05
-	road.longitudinal_grip_ratio = 0.5
-	errors += _save(road, PRESET_DIR + "surface_road.tres")
+	var failures := 0
+	var road: MVSurface = _make_surface("surface_road.tres", &"Road", 10.0, 3.0, 1.0, 0.05)
+	var dirt: MVSurface = _make_surface("surface_dirt.tres", &"Dirt", 0.5, 2.4, 2.0, 0.0)
+	var grass: MVSurface = _make_surface("surface_grass.tres", &"Grass", 0.5, 2.0, 4.0, 0.0)
+	failures += _save(road, "surface_road.tres")
+	failures += _save(dirt, "surface_dirt.tres")
+	failures += _save(grass, "surface_grass.tres")
+	failures += _save(_make_surface_library([road, dirt, grass], road), "surface_library_default.tres")
 
-	var dirt: MVSurface = _load_or_new(PRESET_DIR + "surface_dirt.tres", "MVSurface")
-	dirt.name = &"Dirt"
-	dirt.tire_stiffness = 0.5
-	dirt.coefficient_of_friction = 2.4
-	dirt.rolling_resistance = 2.0
-	dirt.lateral_grip_assist = 0.0
-	dirt.longitudinal_grip_ratio = 0.5
-	errors += _save(dirt, PRESET_DIR + "surface_dirt.tres")
+	failures += _save_defaults("tire_default.tres", &"MVTireSettings")
+	failures += _save_defaults("suspension_default.tres", &"MVSuspensionSettings")
+	failures += _save_defaults("brake_default.tres", &"MVBrakeSettings")
+	failures += _save(_make_monster_truck_tire(), "tire_monster_truck.tres")
+	failures += _save(_make_monster_truck_suspension(), "suspension_monster_truck.tres")
 
-	var grass: MVSurface = _load_or_new(PRESET_DIR + "surface_grass.tres", "MVSurface")
-	grass.name = &"Grass"
-	grass.tire_stiffness = 0.5
-	grass.coefficient_of_friction = 2.0
-	grass.rolling_resistance = 4.0
-	grass.lateral_grip_assist = 0.0
-	grass.longitudinal_grip_ratio = 0.5
-	errors += _save(grass, PRESET_DIR + "surface_grass.tres")
-
-	var library: MVSurfaceLibrary = _load_or_new(PRESET_DIR + "surface_library_default.tres", "MVSurfaceLibrary")
-	library.surfaces = [road, dirt, grass]
-	library.default_surface = road
-	errors += _save(library, PRESET_DIR + "surface_library_default.tres")
-
-	# Defaults of each class, saved as-is.
-	errors += _save(_load_or_new(PRESET_DIR + "tire_default.tres", "MVTireSettings"), PRESET_DIR + "tire_default.tres")
-	errors += _save(_load_or_new(PRESET_DIR + "suspension_default.tres", "MVSuspensionSettings"), PRESET_DIR + "suspension_default.tres")
-	errors += _save(_load_or_new(PRESET_DIR + "brake_default.tres", "MVBrakeSettings"), PRESET_DIR + "brake_default.tres")
-
-	# Values from addons/gevp/scenes/monster_truck.tscn (both axles are identical there).
-	var truck_tire: MVTireSettings = _load_or_new(PRESET_DIR + "tire_monster_truck.tres", "MVTireSettings")
-	truck_tire.tire_radius = 0.85
-	truck_tire.tire_width = 1000.0
-	truck_tire.wheel_mass = 363.0
-	errors += _save(truck_tire, PRESET_DIR + "tire_monster_truck.tres")
-
-	var truck_suspension: MVSuspensionSettings = _load_or_new(PRESET_DIR + "suspension_monster_truck.tres", "MVSuspensionSettings")
-	truck_suspension.spring_length = 0.711
-	truck_suspension.resting_ratio = 0.3
-	truck_suspension.damping_ratio = 0.2
-	truck_suspension.bump_damp_multiplier = 1.0
-	truck_suspension.rebound_damp_multiplier = 1.0
-	truck_suspension.anti_roll_ratio = 0.0
-	errors += _save(truck_suspension, PRESET_DIR + "suspension_monster_truck.tres")
-
-	if errors > 0:
-		push_error("%d preset(s) failed to save" % errors)
-	quit(1 if errors > 0 else 0)
+	if failures > 0:
+		push_error("%d preset(s) failed to save" % failures)
+	quit(1 if failures > 0 else 0)
 
 
-# Reuses an existing preset so its UID survives regeneration; otherwise creates a fresh instance.
-func _load_or_new(path: String, type: StringName) -> Resource:
+## Fills one surface preset with the values of a vehicle.gd surface dictionary entry.
+## file_name: preset file name inside PRESET_DIR.
+## surface_name: node group name the surface answers to.
+## tire_stiffness: brush model stiffness factor, unitless.
+## coefficient_of_friction: multiplier on the tire's maximum force, unitless.
+## rolling_resistance: multiplier on the rolling resistance force, unitless.
+## lateral_grip_assist: extra lateral grip per radian of slip, in 1/rad.
+## Returns: the surface, not yet saved. longitudinal_grip_ratio keeps the default 0.5.
+func _make_surface(
+	file_name: String,
+	surface_name: StringName,
+	tire_stiffness: float,
+	coefficient_of_friction: float,
+	rolling_resistance: float,
+	lateral_grip_assist: float,
+) -> MVSurface:
+	var surface: MVSurface = _load_or_new(file_name, &"MVSurface")
+	surface.name = surface_name
+	surface.tire_stiffness = tire_stiffness
+	surface.coefficient_of_friction = coefficient_of_friction
+	surface.rolling_resistance = rolling_resistance
+	surface.lateral_grip_assist = lateral_grip_assist
+	return surface
+
+
+## Saves a preset that holds nothing but the class defaults.
+## file_name: preset file name inside PRESET_DIR.
+## type: class name of the settings resource.
+## Returns: 0 on success, 1 on failure, like _save().
+func _save_defaults(file_name: String, type: StringName) -> int:
+	return _save(_load_or_new(file_name, type), file_name)
+
+
+## Fills the default surface library.
+## surfaces: the surfaces in lookup order; saved as external references.
+## default_surface: the fallback for unknown node group names.
+## Returns: the library, not yet saved.
+func _make_surface_library(
+	surfaces: Array[MVSurface],
+	default_surface: MVSurface,
+) -> MVSurfaceLibrary:
+	var library: MVSurfaceLibrary = _load_or_new(
+		"surface_library_default.tres", &"MVSurfaceLibrary"
+	)
+	library.surfaces = surfaces
+	library.default_surface = default_surface
+	return library
+
+
+## Fills the monster truck tire preset with the monster truck values.
+## Returns: the tire settings, not yet saved.
+func _make_monster_truck_tire() -> MVTireSettings:
+	var tire: MVTireSettings = _load_or_new("tire_monster_truck.tres", &"MVTireSettings")
+	tire.tire_radius = 0.85
+	tire.tire_width = 1000.0
+	tire.wheel_mass = 363.0
+	return tire
+
+
+## Fills the monster truck suspension preset with the monster truck values.
+## Returns: the suspension settings, not yet saved.
+func _make_monster_truck_suspension() -> MVSuspensionSettings:
+	var suspension: MVSuspensionSettings = _load_or_new(
+		"suspension_monster_truck.tres", &"MVSuspensionSettings"
+	)
+	suspension.spring_length = 0.711
+	suspension.resting_ratio = 0.3
+	suspension.damping_ratio = 0.2
+	suspension.bump_damp_multiplier = 1.0
+	suspension.rebound_damp_multiplier = 1.0
+	suspension.anti_roll_ratio = 0.0
+	return suspension
+
+
+## Reuses an existing preset so its UID survives regeneration, or creates a fresh instance.
+## file_name: preset file name inside PRESET_DIR.
+## type: class name of the settings resource the preset must hold.
+## Returns: a resource of that class, loaded from disk when a matching preset exists.
+func _load_or_new(file_name: String, type: StringName) -> Resource:
+	var path: String = PRESET_DIR + file_name
 	if ResourceLoader.exists(path):
-		var existing := ResourceLoader.load(path, type, ResourceLoader.CACHE_MODE_IGNORE)
+		var existing: Resource = ResourceLoader.load(path, type, ResourceLoader.CACHE_MODE_IGNORE)
 		if existing != null and existing.is_class(type):
 			return existing
 	return ClassDB.instantiate(type)
 
 
-func _save(resource: Resource, path: String) -> int:
+## Saves one preset and reports the outcome on the console.
+## resource: the settings resource to write.
+## file_name: preset file name inside PRESET_DIR; also becomes the resource path.
+## Returns: 0 on success, 1 on failure, so callers can sum failures.
+func _save(resource: Resource, file_name: String) -> int:
+	var path: String = PRESET_DIR + file_name
 	resource.take_over_path(path)
-	var err := ResourceSaver.save(resource, path)
-	if err != OK:
-		push_error("Could not save %s: %s" % [path, error_string(err)])
+	var error: Error = ResourceSaver.save(resource, path)
+	if error != OK:
+		push_error("Could not save %s: %s" % [path, error_string(error)])
 		return 1
 	print("Saved ", path)
 	return 0
