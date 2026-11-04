@@ -1,0 +1,96 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+# A new push to the same branch or PR cancels the run that is still in flight.
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SCONS_CACHE: ${{ github.workspace }}/.scons-cache
+  SCONS_CACHE_LIMIT: 4096
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: ${{ matrix.platform }} ${{ matrix.arch }} ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows, linux, macos]
+        target: [editor, template_debug, template_release]
+        include:
+          - platform: windows
+            os: windows-latest
+            arch: x86_64
+          - platform: linux
+            # 22.04 links against an older glibc so the .so loads on older distros.
+            os: ubuntu-22.04
+            arch: x86_64
+          - platform: macos
+            os: macos-latest
+            arch: universal
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install SCons
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install scons
+          scons --version
+
+      - name: Compute cache key inputs
+        id: keys
+        run: |
+          echo "godot_cpp=$(git rev-parse HEAD:thirdparty/godot-cpp)" >> "$GITHUB_OUTPUT"
+          case "$RUNNER_OS" in
+            Linux)   echo "jobs=$(nproc)" >> "$GITHUB_OUTPUT" ;;
+            macOS)   echo "jobs=$(sysctl -n hw.ncpu)" >> "$GITHUB_OUTPUT" ;;
+            Windows) echo "jobs=${NUMBER_OF_PROCESSORS:-2}" >> "$GITHUB_OUTPUT" ;;
+            *)       echo "jobs=2" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Restore SCons cache
+        uses: actions/cache@v4
+        with:
+          path: .scons-cache
+          key: scons-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.target }}-${{ steps.keys.outputs.godot_cpp }}-${{ hashFiles('SConstruct') }}-${{ github.sha }}
+          restore-keys: |
+            scons-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.target }}-${{ steps.keys.outputs.godot_cpp }}-${{ hashFiles('SConstruct') }}-
+            scons-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.target }}-${{ steps.keys.outputs.godot_cpp }}-
+            scons-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.target }}-
+
+      - name: Build
+        run: |
+          scons platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }} -j${{ steps.keys.outputs.jobs }}
+
+      - name: List output
+        run: |
+          find addons/modular_vehicles/bin -type f | sort
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.platform }}-${{ matrix.target }}
+          path: addons/modular_vehicles/bin/
+          if-no-files-found: error
+          # Re-running a job must be able to replace the artifact it uploaded before.
+          overwrite: true

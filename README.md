@@ -1,5 +1,7 @@
 # Modular Vehicles for Godot
 
+[![Build](https://github.com/MarcosBottenbley/modular-vehicles-for-godot/actions/workflows/build.yml/badge.svg)](https://github.com/MarcosBottenbley/modular-vehicles-for-godot/actions/workflows/build.yml)
+
 > **Status: in conversion.** This fork of [Godot Easy Vehicle Physics](https://github.com/DAShoe1/Godot-Easy-Vehicle-Physics)
 > is being rewritten as a C++ GDExtension (`addons/modular_vehicles`, classes prefixed `MV`) that
 > supports any number of wheels at any position: cars, 3- and 6-wheelers, trucks with several
@@ -9,6 +11,7 @@
 > - Progress and the branch-by-branch plan: [Trello board](https://trello.com/b/MIH0pFKn/modular-vehicles-for-godot)
 > - Building the extension from source: [docs/building.md](docs/building.md)
 > - Working in this repo (humans and AI agents): [CLAUDE.md](CLAUDE.md)
+> - Contributing (branches, PRs, review): [CONTRIBUTING.md](CONTRIBUTING.md)
 > - Requires Godot 4.4+ for the extension; the GDScript addon below still works on 4.2+.
 
 ---
