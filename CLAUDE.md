@@ -56,7 +56,9 @@ Verify a build loaded: the Output panel (or `godot --headless --path . --quit`) 
 
 ## Test
 
-- doctest (from B03): `scons tests` then `bin\tests\mv_tests.exe`.
+- doctest (B03, `src/math` only): `scons tests` then `bin\tests\mv_tests.exe` (`bin/tests/mv_tests` on
+  Linux/macOS). Never links godot-cpp. Golden values come from `tests/unit/golden/golden_values.gd`;
+  how to run, filter and regenerate them: `docs/testing.md`.
 - GUT (from B04): `python tools/fetch_gut.py` once, then
   `godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/gut -ginclude_subdirs -gexit`.
 - Manual: open the project in Godot 4.4+ and play the demo scenes. Physics tick must be 120 Hz.
